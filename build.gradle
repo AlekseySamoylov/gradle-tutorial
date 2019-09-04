@@ -27,14 +27,96 @@ compileTestKotlin {
 
 
 //////////////////////////////////////////////////////////////////////////////////////////
-defaultTasks 'hello'
+defaultTasks 'anotherTask', 'hello', 'hi', 'hello2'
 
 static def oneArgMethod(closure) {
     closure() * 2
 }
 
 task ('hello').doLast {
-    logger.info "Hello World"
+
+    project.ext.sayHello = "Hello!!"
+
+    logger.info "Hello World logger"
+    println "Hello World"
     println oneArgMethod { 10 }
+
+    apply {
+        logger.info "Hello again task"
+        if (project.hasProperty('springBootVersion')) {
+            println "Hello again task  $springBootVersion"
+        }
+
+        logger.info sayHello
+    }
 }
 
+apply {
+    logger.info "Hello again logger"
+    println "Hello again"
+}
+
+
+task hi
+
+project.hi.doLast {
+    logger.info " Hi"
+    println "Hi hi"
+}
+
+task hello2 (dependsOn: 'hi') {
+    description = "Log the name of the task"
+    group = "Welcome"
+    doFirst {
+        logger.info "My name is: $name and this is my first 1st defined Action"
+    }
+    doLast {
+        logger.info "My name is: $name and this is my first 2st defined Action"
+    }
+}
+logger.info hello2.description
+logger.info hello2.group
+
+hello2.doLast {
+    logger.info "My name is: $name and this is my first 3st defined Action"
+}
+
+hello2.doFirst {
+    logger.info "My name is: $name and this is my first 0st defined Action"
+}.doLast {
+    logger.info "My name is: $name and this is my first 4st defined Action"
+}.doLast {
+    logger.info "My name is: $name and this is my first 5st defined Action"
+}
+
+build.doLast {
+    logger.info "Hello Build"
+}
+
+
+task anotherTask ( dependsOn: project.tasks.findAll { task -> task.name.startsWith('hello') }) {
+    doFirst {
+        logger.info "My name is: $name and this is my first 1st defined Action >>> with version = $version"
+    }
+}
+
+logger.info ">>> ${ project.tasks.findAll { task -> task.name.startsWith('hello') } }"
+logger.info ">>> ${ project.gradle.taskGraph }"
+
+project.gradle.taskGraph.whenReady { taskGraph ->
+    if (taskGraph.hasTask(hi)) {
+        project.version = '1.0'
+    } else {
+        project.version = '1.0-SNAPSHOT'
+    }
+    logger.info ">>> ${ project.gradle.taskGraph.allTasks }"
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    if (taskGraph.hasTask(hi)) {
+        version = '1.0'
+    } else {
+        version = '1.0-SNAPSHOT'
+    }
+    logger.info "++++ ${ project.gradle.taskGraph.allTasks }"
+}
